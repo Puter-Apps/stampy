@@ -67,6 +67,8 @@ function AddSiteDialog({ isOpen, onAddSite, onCancel }) {
 
 function Sidebar() {
   const [showAddDialog, setShowAddDialog] = React.useState(false);
+  const [isSignedIn, setIsSignedIn] = React.useState(false);
+  const [username, setUsername] = React.useState("");
   const [sites, setSites] = React.useState([
     {
       id: 1,
@@ -76,6 +78,35 @@ function Sidebar() {
       lastUpdated: "2 hours ago",
     },
   ]);
+
+  React.useEffect(() => {
+    const checkAuthStatus = async () => {
+      try {
+        const signedIn = await puter.auth.isSignedIn();
+        setIsSignedIn(signedIn);
+
+        if (signedIn) {
+          const user = await puter.auth.getUser();
+          setUsername(user.username);
+        }
+      } catch (error) {
+        console.error("Error checking auth status:", error);
+      }
+    };
+
+    checkAuthStatus();
+  }, []);
+
+  const handleLogin = async () => {
+    try {
+      await puter.auth.signIn();
+      setIsSignedIn(true);
+      const user = await puter.auth.getUser();
+      setUsername(user.username);
+    } catch (error) {
+      console.error("Error signing in:", error);
+    }
+  };
 
   const handleAddSite = (url) => {
     const newSite = {
@@ -94,8 +125,24 @@ function Sidebar() {
     <>
       <div className="w-1/4 bg-white border-r border-gray-200 flex flex-col">
         <div className="p-4 border-b border-gray-200">
-          <h1 className="text-xl font-bold text-gray-900">Stampy</h1>
-          <p className="text-sm text-gray-600">Chat with any websites</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-xl font-bold text-gray-900">Stampy</h1>
+              <p className="text-sm text-gray-600">Chat with any websites</p>
+            </div>
+            <div className="flex items-center">
+              {isSignedIn ? (
+                <span className="text-sm text-gray-700">@{username}</span>
+              ) : (
+                <button
+                  onClick={handleLogin}
+                  className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-3 py-1 rounded font-medium transition-colors"
+                >
+                  Login
+                </button>
+              )}
+            </div>
+          </div>
         </div>
 
         <div className="p-4">
