@@ -92,7 +92,7 @@ function Sidebar() {
 
   return (
     <>
-      <div className="w-1/3 bg-white border-r border-gray-200 flex flex-col">
+      <div className="w-1/4 bg-white border-r border-gray-200 flex flex-col">
         <div className="p-4 border-b border-gray-200">
           <h1 className="text-xl font-bold text-gray-900">Stampy</h1>
           <p className="text-sm text-gray-600">Chat with any websites</p>
