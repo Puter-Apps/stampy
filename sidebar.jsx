@@ -1,11 +1,13 @@
 function AddSiteDialog({ isOpen, onAddSite, onCancel }) {
   const [name, setName] = React.useState("");
+  const [sitemapUrl, setSitemapUrl] = React.useState("");
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (name.trim()) {
-      onAddSite(name.trim());
+    if (name.trim() && sitemapUrl.trim()) {
+      onAddSite(name.trim(), sitemapUrl.trim());
       setName("");
+      setSitemapUrl("");
     }
   };
 
@@ -42,6 +44,22 @@ function AddSiteDialog({ isOpen, onAddSite, onCancel }) {
               placeholder="My Website"
               className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               autoFocus
+            />
+          </div>
+          <div>
+            <label
+              htmlFor="sitemap-input"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
+              Sitemap URL
+            </label>
+            <input
+              id="sitemap-input"
+              type="url"
+              value={sitemapUrl}
+              onChange={(e) => setSitemapUrl(e.target.value)}
+              placeholder="https://example.com/sitemap.xml"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
           <div className="flex space-x-3 pt-2">
@@ -124,13 +142,25 @@ function Sidebar() {
     return crypto.randomUUID();
   };
 
-  const handleAddSite = async (name) => {
+  const extractHostnameFromUrl = (url) => {
+    try {
+      return new URL(url).hostname;
+    } catch (error) {
+      console.error("Invalid URL:", url);
+      return "";
+    }
+  };
+
+  const handleAddSite = async (name, sitemapUrl) => {
+    const hostname = extractHostnameFromUrl(sitemapUrl);
+    const indexPath = hostname ? `${hostname}/index.json` : "";
+
     const newSite = {
       id: generateUUID(),
       name: name,
-      hostname: "",
-      sitemap_path: "",
-      index_path: "",
+      hostname: hostname,
+      sitemap_url: sitemapUrl,
+      index_path: indexPath,
     };
 
     const updatedSites = [...sites, newSite];
@@ -140,7 +170,7 @@ function Sidebar() {
   };
 
   const handleDeleteSite = async (siteId) => {
-    const updatedSites = sites.filter(site => site.id !== siteId);
+    const updatedSites = sites.filter((site) => site.id !== siteId);
     setSites(updatedSites);
     await saveWebsites(updatedSites);
   };
@@ -199,13 +229,23 @@ function Sidebar() {
                     className="text-gray-400 hover:text-red-600 p-1"
                     title="Delete site"
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                      />
                     </svg>
                   </button>
                 </div>
                 <div className="mt-3 text-xs text-gray-500">
-                  {site.sitemap_path && `Sitemap: ${site.sitemap_path} • `}
+                  {site.sitemap_url && `Sitemap: ${site.sitemap_url}`} <br />
                   {site.index_path && `Index: ${site.index_path}`}
                 </div>
               </div>
