@@ -151,22 +151,48 @@ function Sidebar() {
     }
   };
 
+  const parseSitemapUrls = (xmlContent) => {
+    const parser = new DOMParser();
+    const xmlDoc = parser.parseFromString(xmlContent, "text/xml");
+
+    // Get all <loc> elements within <url> elements
+    const locElements = xmlDoc.querySelectorAll("urlset url loc");
+
+    const urls = Array.from(locElements).map((loc) => loc.textContent);
+
+    return urls;
+  };
+
   const handleAddSite = async (name, sitemapUrl) => {
-    const hostname = extractHostnameFromUrl(sitemapUrl);
-    const indexPath = hostname ? `${hostname}/index.json` : "";
+    try {
+      // Fetch the sitemap and log the result
+      console.log("Fetching sitemap from:", sitemapUrl);
+      const response = await puter.net.fetch(sitemapUrl);
+      const sitemapContent = await response.text();
+      console.log("Sitemap content:", sitemapContent);
 
-    const newSite = {
-      id: generateUUID(),
-      name: name,
-      hostname: hostname,
-      sitemap_url: sitemapUrl,
-      index_path: indexPath,
-    };
+      const urls = parseSitemapUrls(sitemapContent);
 
-    const updatedSites = [...sites, newSite];
-    setSites(updatedSites);
-    await saveWebsites(updatedSites);
-    setShowAddDialog(false);
+      const hostname = extractHostnameFromUrl(sitemapUrl);
+      const indexPath = hostname ? `${hostname}/index.json` : "";
+
+      const newSite = {
+        id: generateUUID(),
+        name: name,
+        hostname: hostname,
+        sitemap_url: sitemapUrl,
+        index_path: indexPath,
+      };
+
+      const updatedSites = [...sites, newSite];
+      await saveWebsites(updatedSites);
+      setShowAddDialog(false);
+      setSites(updatedSites);
+    } catch (error) {
+      console.error("Error fetching sitemap:", error);
+      alert("error, check console");
+      setShowAddDialog(false);
+    }
   };
 
   const handleDeleteSite = async (siteId) => {
