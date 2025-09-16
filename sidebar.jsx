@@ -1,11 +1,11 @@
 function AddSiteDialog({ isOpen, onAddSite, onCancel }) {
-  const [url, setUrl] = React.useState("");
+  const [name, setName] = React.useState("");
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (url.trim()) {
-      onAddSite(url.trim());
-      setUrl("");
+    if (name.trim()) {
+      onAddSite(name.trim());
+      setName("");
     }
   };
 
@@ -29,17 +29,17 @@ function AddSiteDialog({ isOpen, onAddSite, onCancel }) {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label
-              htmlFor="url-input"
+              htmlFor="name-input"
               className="block text-sm font-medium text-gray-700 mb-2"
             >
-              Website URL
+              Website Name
             </label>
             <input
-              id="url-input"
-              type="url"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              placeholder="https://example.com"
+              id="name-input"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="My Website"
               className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               autoFocus
             />
@@ -69,15 +69,26 @@ function Sidebar() {
   const [showAddDialog, setShowAddDialog] = React.useState(false);
   const [isSignedIn, setIsSignedIn] = React.useState(false);
   const [username, setUsername] = React.useState("");
-  const [sites, setSites] = React.useState([
-    {
-      id: 1,
-      name: "Puter.js Docs",
-      url: "https://docs.puter.com/",
-      pages: 1234,
-      lastUpdated: "2 hours ago",
-    },
-  ]);
+  const [sites, setSites] = React.useState([]);
+
+  const loadWebsites = async () => {
+    try {
+      const websites = await puter.kv.get("websites");
+      if (websites) {
+        setSites(websites);
+      }
+    } catch (error) {
+      console.error("Error loading websites:", error);
+    }
+  };
+
+  const saveWebsites = async (websitesList) => {
+    try {
+      await puter.kv.set("websites", websitesList);
+    } catch (error) {
+      console.error("Error saving websites:", error);
+    }
+  };
 
   React.useEffect(() => {
     const checkAuthStatus = async () => {
@@ -88,6 +99,7 @@ function Sidebar() {
         if (signedIn) {
           const user = await puter.auth.getUser();
           setUsername(user.username);
+          await loadWebsites();
         }
       } catch (error) {
         console.error("Error checking auth status:", error);
@@ -108,16 +120,18 @@ function Sidebar() {
     }
   };
 
-  const handleAddSite = (url) => {
+  const handleAddSite = async (name) => {
     const newSite = {
       id: Date.now(),
-      name: new URL(url).hostname,
-      url: url,
-      status: "indexing",
-      pages: 0,
-      lastUpdated: "Just added",
+      name: name,
+      hostname: "",
+      sitemap_path: "",
+      index_path: "",
     };
-    setSites([...sites, newSite]);
+
+    const updatedSites = [...sites, newSite];
+    setSites(updatedSites);
+    await saveWebsites(updatedSites);
     setShowAddDialog(false);
   };
 
@@ -164,15 +178,17 @@ function Sidebar() {
                 <div className="flex items-start justify-between">
                   <div>
                     <h3 className="font-medium text-gray-900">{site.name}</h3>
-                    <p className="text-sm text-gray-600 mt-1">{site.url}</p>
+                    {site.hostname && (
+                      <p className="text-sm text-gray-600 mt-1">
+                        {site.hostname}
+                      </p>
+                    )}
                   </div>
                   <button className="text-gray-400 hover:text-gray-600"></button>
                 </div>
                 <div className="mt-3 text-xs text-gray-500">
-                  {site.pages > 0
-                    ? `${site.pages.toLocaleString()} pages • `
-                    : ""}
-                  Last updated {site.lastUpdated}
+                  {site.sitemap_path && `Sitemap: ${site.sitemap_path} • `}
+                  {site.index_path && `Index: ${site.index_path}`}
                 </div>
               </div>
             ))}
