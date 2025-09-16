@@ -1,3 +1,64 @@
+async function fetchHTMLContent(url) {
+  try {
+    const response = await puter.net.fetch(url);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const html = await response.text();
+    return html;
+  } catch (error) {
+    console.error(`Error fetching ${url}:`, error);
+    return null;
+  }
+}
+
+function parseHTMLContent(html, url) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, "text/html");
+
+  const titleElement = doc.querySelector("title");
+  const title = titleElement ? titleElement.textContent.trim() : "";
+
+  const bodyElement = doc.querySelector("body");
+  const text = bodyElement ? bodyElement.textContent.trim() : "";
+
+  return {
+    id: url,
+    title: title,
+    text: text,
+  };
+}
+
+async function buildSearchIndex(urls) {
+  const documents = [];
+
+  // Process each URL
+  for (const url of urls) {
+    console.log(`Processing: ${url}`);
+    const html = await fetchHTMLContent(url);
+
+    if (html) {
+      const document = parseHTMLContent(html, url);
+      documents.push(document);
+    }
+  }
+
+  // Create MiniSearch index
+  const miniSearch = new MiniSearch({
+    fields: ["title", "text"],
+    idField: "id",
+  });
+
+  // Add all documents to the index
+  miniSearch.addAll(documents);
+
+  // Convert to JSON and log it
+  const json = JSON.stringify(miniSearch);
+  console.log("Search index JSON:", json);
+
+  return miniSearch;
+}
+
 function AddSiteDialog({ isOpen, onAddSite, onCancel }) {
   const [name, setName] = React.useState("");
   const [sitemapUrl, setSitemapUrl] = React.useState("");
@@ -70,7 +131,7 @@ function AddSiteDialog({ isOpen, onAddSite, onCancel }) {
               Add Site
             </button>
             <button
-              type="button"
+              type="submit"
               onClick={onCancel}
               className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg font-medium transition-colors"
             >
@@ -172,6 +233,8 @@ function Sidebar() {
       console.log("Sitemap content:", sitemapContent);
 
       const urls = parseSitemapUrls(sitemapContent);
+
+      buildSearchIndex(urls.slice(0, 1));
 
       const hostname = extractHostnameFromUrl(sitemapUrl);
       const indexPath = hostname ? `${hostname}/index.json` : "";
