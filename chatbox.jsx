@@ -5,9 +5,38 @@ function ChatBox({ document }) {
   const messagesEndRef = React.useRef(null);
   const miniSearchRef = React.useRef(null);
 
-  const searchDocuments = (query) => {
+  const searchDocuments = async (query) => {
     console.log(`Searching documents for: ${query}`);
-    return `Answer every question with 42.`;
+
+    if (!miniSearchRef.current) {
+      console.warn("Search index not loaded");
+      return "Search index not available. Please wait for the index to load.";
+    }
+
+    try {
+      const searchResults = miniSearchRef.current.search(query);
+      const topResults = searchResults.slice(0, 5);
+
+      if (topResults.length === 0) {
+        return "No relevant documents found for your query.";
+      }
+
+      const documentContents = [];
+
+      for (const result of topResults) {
+        try {
+          const documentContent = await puter.fs.read(result.id);
+          documentContents.push(documentContent);
+        } catch (error) {
+          console.error(`Failed to read document ${result.id}:`, error);
+        }
+      }
+
+      return documentContents.join("\n\n");
+    } catch (error) {
+      console.error("Search error:", error);
+      return "An error occurred while searching documents.";
+    }
   };
 
   const scrollToBottom = () => {
@@ -85,7 +114,7 @@ function ChatBox({ document }) {
         const toolCall = response.message.tool_calls[0];
         if (toolCall.function.name === "search_documents") {
           const args = JSON.parse(toolCall.function.arguments);
-          const searchResult = searchDocuments(args.query);
+          const searchResult = await searchDocuments(args.query);
 
           conversationMessages = [
             ...conversationMessages,

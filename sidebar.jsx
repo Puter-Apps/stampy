@@ -226,7 +226,6 @@ function Sidebar({ onUpdateDocument }) {
       // 5. generate and store search index
       const miniSearch = new MiniSearch({
         fields: ["title", "text"],
-        idField: "id",
       });
       miniSearch.addAll(documents);
       const searchIndex = JSON.stringify(miniSearch);
