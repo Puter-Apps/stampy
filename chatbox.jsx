@@ -22,12 +22,14 @@ function ChatBox({ document }) {
       content: inputValue.trim(),
     };
 
-    setMessages((prev) => [...prev, userMessage]);
+    const updatedMessages = [...messages, userMessage];
+
+    setMessages(updatedMessages);
     setInputValue("");
     setIsLoading(true);
 
     try {
-      const response = await puter.ai.chat(inputValue.trim(), {
+      const response = await puter.ai.chat(updatedMessages, {
         model: "openrouter:google/gemini-2.5-flash-lite",
         stream: true,
       });
