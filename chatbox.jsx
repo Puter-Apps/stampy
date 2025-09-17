@@ -3,6 +3,7 @@ function ChatBox({ document }) {
   const [inputValue, setInputValue] = React.useState("");
   const [isLoading, setIsLoading] = React.useState(false);
   const messagesEndRef = React.useRef(null);
+  const miniSearchRef = React.useRef(null);
 
   const searchDocuments = (query) => {
     console.log(`Searching documents for: ${query}`);
@@ -16,6 +17,26 @@ function ChatBox({ document }) {
   React.useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  React.useEffect(() => {
+    const loadSearchIndex = async () => {
+      if (!document?.index_path) return;
+
+      try {
+        const indexData = await puter.fs.read(document.index_path);
+        const miniSearch = MiniSearch.loadJSON(indexData, {
+          fields: ["title", "text"],
+        });
+        miniSearchRef.current = miniSearch;
+        console.log("Search index loaded successfully");
+      } catch (error) {
+        console.error("Failed to load search index:", error);
+        miniSearchRef.current = null;
+      }
+    };
+
+    loadSearchIndex();
+  }, [document]);
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
