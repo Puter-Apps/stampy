@@ -116,7 +116,7 @@ function AddSiteDialog({ isOpen, onAddSite, onCancel }) {
   );
 }
 
-function Sidebar() {
+function Sidebar({ onUpdateDocument }) {
   const [showAddDialog, setShowAddDialog] = React.useState(false);
   const [isSignedIn, setIsSignedIn] = React.useState(false);
   const [username, setUsername] = React.useState("");
@@ -301,7 +301,8 @@ function Sidebar() {
             {sites.map((site) => (
               <div
                 key={site.id}
-                className="bg-gray-50 rounded-lg p-4 border border-gray-200"
+                className="bg-gray-50 hover:bg-gray-100 rounded-lg p-4 border border-gray-200 cursor-pointer transition-colors"
+                onClick={() => onUpdateDocument(site)}
               >
                 <div className="flex items-start justify-between">
                   <div>
@@ -313,7 +314,10 @@ function Sidebar() {
                     )}
                   </div>
                   <button
-                    onClick={() => handleDeleteSite(site.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteSite(site.id);
+                    }}
                     className="text-gray-400 hover:text-red-600 p-1"
                     title="Delete site"
                   >
