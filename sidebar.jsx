@@ -22,41 +22,13 @@ function parseHTMLContent(html, url) {
   const bodyElement = doc.querySelector("body");
   const text = bodyElement ? bodyElement.textContent.trim() : "";
 
+  const urlObj = new URL(url);
+
   return {
-    id: url,
+    id: `${urlObj.hostname}${urlObj.pathname}#content.txt`,
     title: title,
     text: text,
   };
-}
-
-async function buildSearchIndex(urls) {
-  const documents = [];
-
-  // Process each URL
-  for (const url of urls) {
-    console.log(`Processing: ${url}`);
-    const html = await fetchHTMLContent(url);
-
-    if (html) {
-      const document = parseHTMLContent(html, url);
-      documents.push(document);
-    }
-  }
-
-  // Create MiniSearch index
-  const miniSearch = new MiniSearch({
-    fields: ["title", "text"],
-    idField: "id",
-  });
-
-  // Add all documents to the index
-  miniSearch.addAll(documents);
-
-  // Convert to JSON and log it
-  const json = JSON.stringify(miniSearch);
-  console.log("Search index JSON:", json);
-
-  return miniSearch;
 }
 
 function AddSiteDialog({ isOpen, onAddSite, onCancel }) {
@@ -226,25 +198,52 @@ function Sidebar() {
 
   const handleAddSite = async (name, sitemapUrl) => {
     try {
-      // Fetch the sitemap and log the result
-      console.log("Fetching sitemap from:", sitemapUrl);
+      // 1. fetch sitemap
       const response = await puter.net.fetch(sitemapUrl);
       const sitemapContent = await response.text();
-      console.log("Sitemap content:", sitemapContent);
 
-      const urls = parseSitemapUrls(sitemapContent);
+      // 2. get urls from sitemap
+      const urls = parseSitemapUrls(sitemapContent).slice(0, 5);
 
-      buildSearchIndex(urls.slice(0, 1));
+      // 3. extract url contents
+      const documents = [];
+      for (const url of urls) {
+        const html = await fetchHTMLContent(url);
+        if (html) {
+          const document = parseHTMLContent(html, url);
+          documents.push(document);
+        }
+      }
+
+      // 4. persist documents
+      for (const document of documents) {
+        console.log("writing to fs: ", document);
+        await puter.fs.write(document.id, document.text, {
+          createMissingParents: true,
+        });
+      }
+
+      // 5. generate and store search index
+      const miniSearch = new MiniSearch({
+        fields: ["title", "text"],
+        idField: "id",
+      });
+      miniSearch.addAll(documents);
+      const searchIndex = JSON.stringify(miniSearch);
 
       const hostname = extractHostnameFromUrl(sitemapUrl);
-      const indexPath = hostname ? `${hostname}/index.json` : "";
+      const searchIndexPath = hostname ? `${hostname}/index.json` : "";
+
+      await puter.fs.write(searchIndexPath, searchIndex, {
+        createMissingParents: true,
+      });
 
       const newSite = {
         id: generateUUID(),
         name: name,
         hostname: hostname,
         sitemap_url: sitemapUrl,
-        index_path: indexPath,
+        index_path: searchIndexPath,
       };
 
       const updatedSites = [...sites, newSite];
