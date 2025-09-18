@@ -258,14 +258,22 @@ function Sidebar({ onUpdateDocument }) {
 
     // 4. persist documents
     try {
-      await Promise.all(
-        documents.map(async (document) => {
-          console.log("writing to fs: ", document);
-          return puter.fs.write(document.id, document.text, {
-            createMissingParents: true,
-          });
-        })
-      );
+      for (const document of documents) {
+        console.log("writing to fs: ", document);
+        await puter.fs.write(document.id, document.text, {
+          createMissingParents: true,
+        });
+      }
+
+      // parallel is broken
+      // await Promise.all(
+      //   documents.map(async (document) => {
+      //     console.log("writing to fs: ", document);
+      //     return puter.fs.write(document.id, document.text, {
+      //       createMissingParents: true,
+      //     });
+      //   })
+      // );
     } catch (error) {
       console.error("Error persisting documents:", error);
       alert("Failed to save documents to storage. Please try again.");
@@ -315,7 +323,7 @@ function Sidebar({ onUpdateDocument }) {
 
   const handleDeleteSite = async (siteId) => {
     const siteDocument = sites.find((site) => site.id === siteId);
-    await puter.fs.delete(siteDocument.hostname);
+    puter.fs.delete(siteDocument.hostname);
 
     const updatedSites = sites.filter((site) => site.id !== siteId);
     setSites(updatedSites);
