@@ -197,19 +197,48 @@ function Sidebar({ onUpdateDocument }) {
   };
 
   const handleAddSite = async (name, sitemapUrl) => {
+    let sitemapContent,
+      urls,
+      htmlContents,
+      documents,
+      hostname,
+      searchIndexPath;
+
+    // 1. fetch sitemap
     try {
-      // 1. fetch sitemap
       const response = await puter.net.fetch(sitemapUrl);
-      const sitemapContent = await response.text();
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      sitemapContent = await response.text();
+    } catch (error) {
+      console.error("Error fetching sitemap:", error);
+      alert("Failed to fetch sitemap. Please check the URL and try again.");
+      setShowAddDialog(false);
+      return;
+    }
 
-      // 2. get urls from sitemap
-      const urls = parseSitemapUrls(sitemapContent);
+    // 2. get urls from sitemap
+    try {
+      urls = parseSitemapUrls(sitemapContent);
+      if (!urls || urls.length === 0) {
+        throw new Error("No URLs found in sitemap");
+      }
+    } catch (error) {
+      console.error("Error parsing sitemap:", error);
+      alert(
+        "Failed to parse sitemap. Please check if it's a valid sitemap XML."
+      );
+      setShowAddDialog(false);
+      return;
+    }
 
-      // 3. extract url contents
+    // 3. extract url contents
+    try {
       const htmlPromises = urls.map((url) => fetchHTMLContent(url));
-      const htmlContents = await Promise.all(htmlPromises);
+      htmlContents = await Promise.all(htmlPromises);
 
-      const documents = [];
+      documents = [];
       for (let i = 0; i < urls.length; i++) {
         const html = htmlContents[i];
         if (html) {
@@ -218,28 +247,56 @@ function Sidebar({ onUpdateDocument }) {
         }
       }
 
-      // 4. persist documents
+      if (documents.length === 0) {
+        throw new Error("No content could be extracted from any URLs");
+      }
+    } catch (error) {
+      console.error("Error extracting content from URLs:", error);
+      alert(
+        "Failed to extract content from website pages. Some pages may be inaccessible."
+      );
+      setShowAddDialog(false);
+      return;
+    }
+
+    // 4. persist documents
+    try {
       for (const document of documents) {
         console.log("writing to fs: ", document);
         await puter.fs.write(document.id, document.text, {
           createMissingParents: true,
         });
       }
+    } catch (error) {
+      console.error("Error persisting documents:", error);
+      alert("Failed to save documents to storage. Please try again.");
+      setShowAddDialog(false);
+      return;
+    }
 
-      // 5. generate and store search index
+    // 5. generate and store search index
+    try {
       const miniSearch = new MiniSearch({
         fields: ["title", "text"],
       });
       miniSearch.addAll(documents);
       const searchIndex = JSON.stringify(miniSearch);
 
-      const hostname = extractHostnameFromUrl(sitemapUrl);
-      const searchIndexPath = hostname ? `${hostname}/index.json` : "";
+      hostname = extractHostnameFromUrl(sitemapUrl);
+      searchIndexPath = hostname ? `${hostname}/index.json` : "";
 
       await puter.fs.write(searchIndexPath, searchIndex, {
         createMissingParents: true,
       });
+    } catch (error) {
+      console.error("Error generating search index:", error);
+      alert("Failed to generate search index. Please try again.");
+      setShowAddDialog(false);
+      return;
+    }
 
+    // 6. save site configuration
+    try {
       const newSite = {
         id: generateUUID(),
         name: name,
@@ -250,12 +307,13 @@ function Sidebar({ onUpdateDocument }) {
 
       const updatedSites = [...sites, newSite];
       await saveWebsites(updatedSites);
-      setShowAddDialog(false);
       setSites(updatedSites);
-    } catch (error) {
-      console.error("Error fetching sitemap:", error);
-      alert("error, check console");
       setShowAddDialog(false);
+    } catch (error) {
+      console.error("Error saving site configuration:", error);
+      alert("Failed to save site configuration. Please try again.");
+      setShowAddDialog(false);
+      return;
     }
   };
 
