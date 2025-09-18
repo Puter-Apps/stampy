@@ -236,7 +236,12 @@ function ChatBox({ document }) {
                   : "bg-gray-50 text-gray-900"
               }`}
             >
-              <p className="whitespace-pre-wrap">{message.content}</p>
+              <div
+                className="whitespace-pre-wrap"
+                dangerouslySetInnerHTML={{
+                  __html: marked.parse(message.content),
+                }}
+              />
             </div>
             {message.role === "user" && (
               <div className="flex-shrink-0">
