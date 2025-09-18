@@ -52,6 +52,11 @@ function ChatBox({ document }) {
     const loadSearchIndex = async () => {
       if (!document?.index_path) return;
 
+      setMessages([]);
+      setInputValue("");
+      setIsLoading(false);
+      miniSearchRef.current = null;
+
       try {
         const indexBlob = await puter.fs.read(document.index_path);
         const indexData = await indexBlob.text();
