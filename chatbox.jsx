@@ -25,7 +25,8 @@ function ChatBox({ document }) {
 
       for (const result of topResults) {
         try {
-          const documentContent = await puter.fs.read(result.id);
+          const documentBlob = await puter.fs.read(result.id);
+          const documentContent = await documentBlob.text();
           documentContents.push(documentContent);
         } catch (error) {
           console.error(`Failed to read document ${result.id}:`, error);
@@ -52,7 +53,8 @@ function ChatBox({ document }) {
       if (!document?.index_path) return;
 
       try {
-        const indexData = await puter.fs.read(document.index_path);
+        const indexBlob = await puter.fs.read(document.index_path);
+        const indexData = await indexBlob.text();
         const miniSearch = MiniSearch.loadJSON(indexData, {
           fields: ["title", "text"],
         });
