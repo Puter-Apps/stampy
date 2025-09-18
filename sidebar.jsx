@@ -35,10 +35,10 @@ function AddSiteDialog({ isOpen, onAddSite, onCancel }) {
   const [name, setName] = React.useState("");
   const [sitemapUrl, setSitemapUrl] = React.useState("");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (name.trim() && sitemapUrl.trim()) {
-      onAddSite(name.trim(), sitemapUrl.trim());
+      await onAddSite(name.trim(), sitemapUrl.trim());
       setName("");
       setSitemapUrl("");
     }
@@ -203,14 +203,17 @@ function Sidebar({ onUpdateDocument }) {
       const sitemapContent = await response.text();
 
       // 2. get urls from sitemap
-      const urls = parseSitemapUrls(sitemapContent).slice(0, 5);
+      const urls = parseSitemapUrls(sitemapContent);
 
       // 3. extract url contents
+      const htmlPromises = urls.map((url) => fetchHTMLContent(url));
+      const htmlContents = await Promise.all(htmlPromises);
+
       const documents = [];
-      for (const url of urls) {
-        const html = await fetchHTMLContent(url);
+      for (let i = 0; i < urls.length; i++) {
+        const html = htmlContents[i];
         if (html) {
-          const document = parseHTMLContent(html, url);
+          const document = parseHTMLContent(html, urls[i]);
           documents.push(document);
         }
       }
@@ -257,6 +260,9 @@ function Sidebar({ onUpdateDocument }) {
   };
 
   const handleDeleteSite = async (siteId) => {
+    const siteDocument = sites.find((site) => site.id === siteId);
+    await puter.fs.delete(siteDocument.hostname);
+
     const updatedSites = sites.filter((site) => site.id !== siteId);
     setSites(updatedSites);
     await saveWebsites(updatedSites);
