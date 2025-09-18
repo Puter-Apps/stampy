@@ -214,7 +214,6 @@ function Sidebar({ onUpdateDocument }) {
     } catch (error) {
       console.error("Error fetching sitemap:", error);
       alert("Failed to fetch sitemap. Please check the URL and try again.");
-      setShowAddDialog(false);
       return;
     }
 
@@ -229,7 +228,6 @@ function Sidebar({ onUpdateDocument }) {
       alert(
         "Failed to parse sitemap. Please check if it's a valid sitemap XML."
       );
-      setShowAddDialog(false);
       return;
     }
 
@@ -255,22 +253,22 @@ function Sidebar({ onUpdateDocument }) {
       alert(
         "Failed to extract content from website pages. Some pages may be inaccessible."
       );
-      setShowAddDialog(false);
       return;
     }
 
     // 4. persist documents
     try {
-      for (const document of documents) {
-        console.log("writing to fs: ", document);
-        await puter.fs.write(document.id, document.text, {
-          createMissingParents: true,
-        });
-      }
+      await Promise.all(
+        documents.map(async (document) => {
+          console.log("writing to fs: ", document);
+          return puter.fs.write(document.id, document.text, {
+            createMissingParents: true,
+          });
+        })
+      );
     } catch (error) {
       console.error("Error persisting documents:", error);
       alert("Failed to save documents to storage. Please try again.");
-      setShowAddDialog(false);
       return;
     }
 
@@ -291,7 +289,6 @@ function Sidebar({ onUpdateDocument }) {
     } catch (error) {
       console.error("Error generating search index:", error);
       alert("Failed to generate search index. Please try again.");
-      setShowAddDialog(false);
       return;
     }
 
@@ -312,7 +309,6 @@ function Sidebar({ onUpdateDocument }) {
     } catch (error) {
       console.error("Error saving site configuration:", error);
       alert("Failed to save site configuration. Please try again.");
-      setShowAddDialog(false);
       return;
     }
   };
