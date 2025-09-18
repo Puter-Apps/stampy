@@ -1,5 +1,11 @@
+const systemPrompt = {
+  role: "system",
+  content:
+    "Answer in the context of the document, search documents before clarifying with users",
+};
+
 function ChatBox({ document }) {
-  const [messages, setMessages] = React.useState([]);
+  const [messages, setMessages] = React.useState([systemPrompt]);
   const [inputValue, setInputValue] = React.useState("");
   const [isLoading, setIsLoading] = React.useState(false);
   const messagesEndRef = React.useRef(null);
@@ -52,7 +58,7 @@ function ChatBox({ document }) {
     const loadSearchIndex = async () => {
       if (!document?.index_path) return;
 
-      setMessages([]);
+      setMessages([systemPrompt]);
       setInputValue("");
       setIsLoading(false);
       miniSearchRef.current = null;
@@ -187,7 +193,7 @@ function ChatBox({ document }) {
             AI Chat Assistant
           </h2>
           <p className="text-sm text-gray-600">
-            Ask questions about your indexed content
+            Chat with your indexed website!
           </p>
         </div>
         <div className="flex-1 flex items-center justify-center">
@@ -203,15 +209,13 @@ function ChatBox({ document }) {
     <div className="flex-1 flex flex-col bg-white">
       <div className="p-4 border-b border-gray-200">
         <h2 className="text-lg font-semibold text-gray-900">
-          AI Chat Assistant
+          {document.hostname}
         </h2>
-        <p className="text-sm text-gray-600">
-          Ask questions about your indexed content
-        </p>
+        <p className="text-sm text-gray-600">Chatting with {document.name}</p>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.map((message) => (
+        {messages.slice(1).map((message) => (
           <div
             key={message.id}
             className={`flex items-start space-x-3 ${
