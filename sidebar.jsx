@@ -34,13 +34,19 @@ function parseHTMLContent(html, url) {
 function AddSiteDialog({ isOpen, onAddSite, onCancel }) {
   const [name, setName] = React.useState("");
   const [sitemapUrl, setSitemapUrl] = React.useState("");
+  const [isLoading, setIsLoading] = React.useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (name.trim() && sitemapUrl.trim()) {
-      await onAddSite(name.trim(), sitemapUrl.trim());
-      setName("");
-      setSitemapUrl("");
+      setIsLoading(true);
+      try {
+        await onAddSite(name.trim(), sitemapUrl.trim());
+        setName("");
+        setSitemapUrl("");
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -98,14 +104,19 @@ function AddSiteDialog({ isOpen, onAddSite, onCancel }) {
           <div className="flex space-x-3 pt-2">
             <button
               type="submit"
-              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+              disabled={isLoading}
+              className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
+                isLoading
+                  ? "bg-gray-400 text-gray-200 cursor-not-allowed"
+                  : "bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
+              }`}
             >
-              Add Site
+              {isLoading ? "Loading..." : "Add Site"}
             </button>
             <button
               type="submit"
               onClick={onCancel}
-              className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg font-medium transition-colors"
+              className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg font-medium transition-colors cursor-pointer"
             >
               Cancel
             </button>
@@ -385,7 +396,7 @@ function Sidebar({ onUpdateDocument }) {
                       e.stopPropagation();
                       handleDeleteSite(site.id);
                     }}
-                    className="text-gray-400 hover:text-red-600 p-1"
+                    className="text-gray-400 hover:text-red-600 p-1 cursor-pointer"
                     title="Delete site"
                   >
                     <svg

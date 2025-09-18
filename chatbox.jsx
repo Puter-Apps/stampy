@@ -188,17 +188,11 @@ function ChatBox({ document }) {
   if (!document) {
     return (
       <div className="flex-1 flex flex-col bg-white">
-        <div className="p-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">
-            AI Chat Assistant
-          </h2>
-          <p className="text-sm text-gray-600">
-            Chat with your indexed website!
-          </p>
-        </div>
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
-            <p className="text-gray-500 text-lg">Choose a website to chat</p>
+            <p className="text-gray-500 text-lg">
+              Choose a website to start chat
+            </p>
           </div>
         </div>
       </div>
