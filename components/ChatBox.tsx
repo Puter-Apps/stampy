@@ -137,7 +137,7 @@ export default function ChatBox({ document }: ChatBoxProps) {
       ];
 
       const response = await puter.ai.chat(conversationMessages, false, {
-        model: "gpt-5-nano",
+        model: "openrouter:google/gemini-2.5-flash-lite",
         tools: tools,
         stream: false,
       });
@@ -167,7 +167,7 @@ export default function ChatBox({ document }: ChatBoxProps) {
             conversationMessages,
             false,
             {
-              model: "gpt-5-nano",
+              model: "openrouter:google/gemini-2.5-flash-lite",
               stream: true,
             }
           );
