@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, FormEvent, useEffect, SyntheticEvent } from "react";
-import puter from "@heyputer/puter.js";
 import MiniSearch from "minisearch";
+import { getPuter } from "@/lib/getPuter";
+
+const puter = await getPuter();
 
 async function fetchHTMLContent(url: string): Promise<string | null> {
   try {
@@ -372,7 +374,7 @@ export default function Sidebar({ onUpdateDocument }: SidebarProps) {
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-xl font-bold text-gray-900">Stampy</h1>
+              <h1 className="text-xl font-bold text-gray-900">Stampy!</h1>
               <p className="text-sm text-gray-600">Chat with any websites</p>
             </div>
             <div className="flex items-center">

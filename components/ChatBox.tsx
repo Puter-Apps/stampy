@@ -2,9 +2,10 @@
 
 import React from "react";
 
-import puter, { ChatMessage, ToolDefinition } from "@heyputer/puter.js";
+import { ChatMessage, ToolDefinition } from "@heyputer/puter.js";
 import MiniSearch from "minisearch";
 import { marked } from "marked";
+import { getPuter } from "@/lib/getPuter";
 
 interface Document {
   id: string;
@@ -23,6 +24,8 @@ const systemPrompt: ChatMessage = {
   content:
     "Answer in the context of the document, search documents before clarifying with users",
 };
+
+const puter = await getPuter();
 
 export default function ChatBox({ document }: ChatBoxProps) {
   const [messages, setMessages] = React.useState<ChatMessage[]>([systemPrompt]);
@@ -152,7 +155,7 @@ export default function ChatBox({ document }: ChatBoxProps) {
           const searchResult = await searchDocuments(args.query);
 
           const toolCallResult: ChatMessage = {
-            role: "function",
+            role: "tool",
             tool_call_id: toolCall.id,
             content: searchResult,
           };
